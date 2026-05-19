@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>不等式冒險島 - 旗艦教育版</title>
+    <style>
+        :root {
+            --primary: #4a90e2; --secondary: #67c23a; --danger: #f56c6c;
+            --warning: #e6a23c; --dark: #2c3e50; --light: #f4f7f9;
+        }
+        * { box-sizing: border-box; font-family: "Microsoft JhengHei", "Heiti TC", sans-serif; }
+        body { background: #f0f2f5; margin: 0; min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
+
+        /* --- 隱藏元素的終極武器 --- */
+        .hidden { display: none !important; }
+
+        /* --- 大廳樣式 --- */
+        #view-lobby { width: 100%; max-width: 1200px; padding: 40px 10px; text-align: center; }
+        
+        /* --- 大廳標題與提示框樣式 --- */
+        .lobby-header { margin-bottom: 40px; display: flex; flex-direction: column; align-items: center; }
+        .lobby-title { color: #0a1b44; margin: 0 0 15px 0; font-size: 2.8rem; font-weight: bold; letter-spacing: 2px; }
+        .lobby-subtitle { color: #222; font-size: 1.1rem; margin: 0 0 15px 0; font-weight: 600; letter-spacing: 1px; }
+        .lobby-tip {
+            background: #fffdf5; 
+            border: 2px solid #f6d89b; 
+            border-radius: 30px; 
+            padding: 10px 25px; 
+            font-size: 1.05rem; 
+            color: #333; 
+            font-weight: bold;
+            display: inline-block;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+        .highlight-red { color: #e5534b; }
+
+        .card-container { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; padding-bottom: 20px; }
+        .card {
+            background: white; border-radius: 20px; padding: 20px; width: 260px; min-width: 240px;
+            cursor: pointer; transition: 0.3s; box-shadow: 0 8px 15px rgba(0,0,0,0.05);
+            display: flex; flex-direction: column; border: 2px solid transparent;
+        }
+        .card:hover { transform: translateY(-8px); box-shadow: 0 12px 25px rgba(0,0,0,0.1); }
+        .card-diag { border-color: #afeeee; } .card-diag h2 { color: #20b2aa; }
+        .card-base { border-color: #98fb98; } .card-base h2 { color: #2ecc71; }
+        .card-adv { border-color: #adc6ff; } .card-adv h2 { color: #4a90e2; }
+        .card-chal { border-color: #e0b0ff; } .card-chal h2 { color: #9b59b6; }
+        .card-icon { font-size: 45px; margin-bottom: 15px; }
+        .card-list { text-align: left; list-style: none; padding: 0; font-size: 0.85rem; color: #444; flex-grow: 1; }
+        .card-list li { margin-bottom: 10px; display: flex; align-items: flex-start; gap: 6px; }
+
+        /* --- 遊戲/診斷 UI 容器 --- */
+        .view-content { width: 95%; max-width: 650px; background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin-top: 40px; margin-bottom: 40px; }
+        
+        .back-btn { padding: 8px 16px; background: var(--dark); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 0.9rem; box-shadow: 0 3px 0 #1a252f; margin-bottom: 15px; }
+        .back-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #1a252f; }
+        
+        /* --- 適性診斷選擇頁面專用樣式 --- */
+        .diag-choice-container {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 25px;
+        }
+        .diag-lvl-card {
+            flex: 1;
+            padding: 30px 10px;
+            border: none;
+            border-radius: 15px;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s, filter 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 150px;
+        }
+        .diag-lvl-card:hover { transform: translateY(-5px); filter: brightness(1.05); }
+        .diag-lvl-card h3 { margin: 0 0 8px 0; font-size: 1.2rem; font-weight: bold; }
+        .diag-lvl-card p { margin: 0; font-size: 1rem; opacity: 0.95; }
+        
+        .lvl-btn { width: 100%; margin-bottom: 12px; padding: 16px; border: none; border-radius: 12px; color: white; font-weight: bold; cursor: pointer; }
+        .lvl-btn:active { transform: translateY(3px); }
+
+        .eq-display { font-size: 2.2rem; text-align: center; margin: 20px 0; font-weight: bold; background: #f8f9fa; padding: 30px; border-radius: 15px; min-height: 160px; display: flex; align-items: center; justify-content: center; }
+        
+        .input-group { display: flex; justify-content: center; align-items: center; gap: 12px; margin-bottom: 10px; }
+        select, input[type="number"] { padding: 10px 12px; font-size: 1.3rem; border: 2px solid #e0e0e0; border-radius: 12px; outline: none; background: white; transition: 0.2s; }
+        select:disabled, input[type="number"]:disabled { background: #f0f0f0; color: #888; cursor: not-allowed; border-color: #ddd; }
+        
+        .submit-btn { padding: 10px 24px; background: var(--dark); color: white; border: none; border-radius: 12px; cursor: pointer; font-size: 1.1rem; font-weight: bold; box-shadow: 0 4px 0 #1a252f; transition: 0.2s; min-width: 100px; }
+        .submit-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #1a252f; }
+        .submit-btn.next-mode { background: var(--primary); box-shadow: 0 4px 0 #357abd; }
+
+        /* 雙向對話框樣式 */
+        .transition-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .transition-box { background: white; padding: 35px; border-radius: 20px; text-align: center; max-width: 400px; width: 90%; animation: popScale 0.3s ease; }
+        @keyframes popScale { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .status-bar { display: flex; justify-content: space-between; align-items: center; background: #eee; padding: 10px 15px; border-radius: 10px; margin-bottom: 15px; font-weight: bold; color: var(--dark); }
+        .dot { width: 14px; height: 14px; border-radius: 50%; background: #ccc; display: inline-block; margin-left: 5px; }
+        .dot.correct { background: var(--secondary); } .dot.wrong { background: var(--danger); }
+        
+        .msg-box { padding: 15px; border-radius: 10px; margin: 15px 0; text-align: center; font-weight: bold; }
+        .correct-bg { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+        .wrong-bg { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+        
+        .fraction { display: inline-block; vertical-align: middle; text-align: center; margin: 0 8px; }
+        .fraction > span { display: block; padding: 0 10px; }
+        .fraction span.fdn { border-top: 2px solid var(--dark); }
+        
+        /* 報告表格與建議框樣式 */
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 15px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }
+        th { background-color: #f4f7f9; }
+        .advice-box { background: #f4faff; border-left: 5px solid var(--primary); padding: 20px; border-radius: 8px; margin: 20px 0; text-align: left; line-height: 1.6; }
+        .failure-box { background: #fff5f5; border-left: 5px solid var(--danger); padding: 20px; border-radius: 8px; margin: 20px 0; text-align: left; line-height: 1.6; }
+    </style>
+</head>
+<body>
+
+<div id="view-lobby">
+    <div class="lobby-header">
+        <h1 class="lobby-title">不等式學習冒險島</h1>
+        <p class="lobby-subtitle">本遊戲設有適性診斷、基礎、進階與挑戰等四個關卡，你可以自由挑選任一關。</p>
+        <div class="lobby-tip">
+            💡 如果你想了解自己目前的學習狀態與適合的學習方向，建議先進行<span class="highlight-red">「適性診斷」</span>哦！
+        </div>
+    </div>
+    <div class="card-container">
+        <div class="card card-diag" onclick="openGame('diag')">
+            <div class="card-icon">🔍</div>
+            <h2>適性診斷</h2>
+            <p>偵測你的不等式戰力</p>
+            <ul class="card-list">
+                <li>📝 給予適性診斷報告</li>
+                <li>🎯 找出最適合的起點</li>
+            </ul>
+        </div>
+        <div class="card card-base" onclick="openGame('base')">
+            <div class="card-icon">🌱</div>
+            <h2>基礎關</h2>
+            <p>單邊移項基礎練習</p>
+            <ul class="card-list">
+                <li>😈 無壓力無限練習</li>
+                <li>🎯 雙向精熟與降級判定</li>
+            </ul>
+        </div>
+        <div class="card card-adv" onclick="openGame('adv')">
+            <div class="card-icon">🚀</div>
+            <h2>進階關</h2>
+            <p>雙邊移項與負數變向</p>
+            <ul class="card-list">
+                <li>📐 無壓力無限練習</li>
+                <li>🎯 雙向精熟與降級判定</li>
+            </ul>
+        </div>
+        <div class="card card-chal" onclick="openGame('chal')">
+            <div class="card-icon">🏆</div>
+            <h2>挑戰關</h2>
+            <p>異分母分數與括號變號</p>
+            <ul class="card-list">
+                <li>🧩 無壓力無限練習</li>
+                <li>🎯 雙向精熟與降級判定</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div id="view-game" class="view-content hidden">
+    <button class="back-btn" onclick="goHome()">← 返回大廳</button>
+    
+    <div id="diag-module" class="hidden">
+        <div id="diag-setup">
+            <h2 style="text-align: center; margin-bottom: 10px;">🎯 歡迎進入適性診斷！</h2>
+            <p style="text-align: center; color: #555; font-weight: bold; margin-bottom: 20px;">此診斷有三個層次，你可以自由挑選任一層次</p>
+            
+            <div class="diag-choice-container">
+                <button class="diag-lvl-card" onclick="startDiag(1)" style="background: var(--secondary); box-shadow: 0 4px 0 #529b2e;">
+                    <h3>從 第 1 層次</h3>
+                    <p>(基礎) 開始</p>
+                </button>
+                <button class="diag-lvl-card" onclick="startDiag(2)" style="background: var(--primary); box-shadow: 0 4px 0 #357abd;">
+                    <h3>從 第 2 層次</h3>
+                    <p>(進階) 開始</p>
+                </button>
+                <button class="diag-lvl-card" onclick="startDiag(3)" style="background: var(--danger); box-shadow: 0 4px 0 #c45656;">
+                    <h3>從 第 3 層次</h3>
+                    <p>(挑戰) 開始</p>
+                </button>
+            </div>
+        </div>
+        <div id="diag-quiz" class="hidden">
+            <div id="diag-trans-msg" class="msg-box hidden"></div>
+            <div class="status-bar"><div>層次：<span id="diag-lvl-label">-</span></div><div id="diag-dots"></div></div>
+            <div class="eq-display" id="diag-eq"></div>
+            <div class="input-group">
+                <span>x</span>
+                <select id="diag-op"><option>></option><option><</option><option>≥</option><option>≤</option></select>
+                <input type="number" id="diag-val" placeholder="?">
+                <button id="diag-btn" class="submit-btn" onclick="submitDiag()">回答</button>
+            </div>
+        </div>
+        <div id="diag-report" class="hidden"></div>
+    </div>
+
+    <div id="practice-module" class="hidden">
+        <h2 id="practice-title" style="text-align:center;">關卡名稱</h2>
+        <div id="practice-msg" class="msg-box hidden"></div>
+        <div class="eq-display" id="practice-eq"></div>
+        <div class="input-group">
+            <span style="font-size:1.5rem; font-weight:bold;">x</span>
+            <select id="practice-op"><option>></option><option><</option><option>≥</option><option>≤</option></select>
+            <input type="number" id="practice-val" placeholder="?">
+            <button id="practice-btn" class="submit-btn" onclick="submitPractice()">回答</button>
+        </div>
+    </div>
+</div>
+
+<div id="transition-modal" class="transition-modal hidden">
+    <div class="transition-box">
+        <div id="transition-icon" style="font-size: 50px;">🌟</div>
+        <h2 id="transition-title">太厲害了！</h2>
+        <p id="transition-text">你已經連續答對多題，代表你對本關卡已經非常精熟囉！</p>
+        <button id="transition-action-btn" class="lvl-btn" style="background:var(--primary); margin-bottom:10px;">挑戰下一關</button>
+        <button onclick="closeTransition()" class="lvl-btn" style="background:var(--dark);">留在這關繼續練</button>
+    </div>
+</div>
+
+<script>
+    // --- 狀態管理 ---
+    const diagState = { lvl: 1, window: [], history: [], passed: new Set(), failed: new Set(), prob: null, isWaitingNext: false };
+    const pState = { 
+        currentMode: 'base',
+        base: { range: 6, window: [], isWaitingNext: false },
+        adv:  { range: 6, window: [], isWaitingNext: false },
+        chal: { range: 6, window: [], isWaitingNext: false }
+    };
+
+    const levelMap = {
+        'base': { next: 'adv', prev: 'lobby', nextName: '進階關', prevName: '大廳' },
+        'adv':  { next: 'chal', prev: 'base', nextName: '挑戰關', prevName: '基礎關' },
+        'chal': { next: 'lobby', prev: 'adv', nextName: '大廳', prevName: '進階關' }
+    };
+
+    // --- 工具庫 ---
+    function getNonZero(range, offset) {
+        let res = 0; const r = Math.floor(range); const o = Math.floor(offset);
+        while(res === 0) { res = Math.floor(Math.random() * r) + o; } return res;
+    }
+    function getLCM(a, b) { const gcd = (x, y) => (!y ? x : gcd(y, x % y)); return (a * b) / gcd(a, b); }
+    function formatTerm(coeff, isFirst = false) {
+        if (coeff === 0) return ""; let val = Math.abs(coeff);
+        if (isFirst) return coeff === 1 ? "" : (coeff === -1 ? "-" : coeff);
+        return val;
+    }
+
+    // --- 導航控制 ---
+    function openGame(mode) {
+        document.getElementById('view-lobby').classList.add('hidden');
+        document.getElementById('view-game').classList.remove('hidden');
+        
+        document.getElementById('diag-module').classList.add('hidden');
+        document.getElementById('practice-module').classList.add('hidden');
+
+        if (mode === 'diag') {
+            document.getElementById('diag-module').classList.remove('hidden');
+            resetDiag();
+        } else {
+            pState.currentMode = mode;
+            document.getElementById('practice-module').classList.remove('hidden');
+            startPractice(mode);
+        }
+    }
+
+    function goHome() {
+        document.getElementById('view-game').classList.add('hidden');
+        document.getElementById('view-lobby').classList.remove('hidden');
+        document.getElementById('transition-modal').classList.add('hidden');
+    }
+
+    // --- 核心練習邏輯 ---
+    function startPractice(mode) {
+        const titles = { 'base': '🌱 基礎關：單邊移項', 'adv': '🚀 進階關：雙邊移項與變向', 'chal': '🏆 挑戰關：分數型與括號' };
+        const colors = { 'base': 'var(--secondary)', 'adv': 'var(--primary)', 'chal': 'var(--danger)' };
+        document.getElementById('practice-title').innerText = titles[mode];
+        document.getElementById('practice-eq').style.color = colors[mode];
+        pState[mode].isWaitingNext = false;
+        pState[mode].window = []; 
+        toggleInputs('practice', false);
+        toggleButtonToNext(document.getElementById('practice-btn'), false);
+        document.getElementById('practice-msg').classList.add('hidden');
+        generateProb(mode);
+    }
+
+    function generateProb(mode) {
+        const r = Math.min(pState[mode].range, 9);
+        const ops = ['>', '<', '≥', '≤'];
+        const flip = {'>':'<', '<':'>', '≥':'≤', '≤':'≥'};
+        let prob = {};
+
+        if (mode === 'base') {
+            const a = Math.floor(Math.random() * 4) + 2; 
+            let solX = getNonZero(r, -Math.floor(r/2));
+            let b = getNonZero(9, -9); 
+            let c = a * solX + b; 
+            if (c === 0) { b = (b === -1) ? 1 : b + 1; c = a * solX + b; }
+            let chosenOp = ops[Math.floor(Math.random() * 4)];
+            prob = { eq: `${a}x ${b > 0 ? '+ '+b : '- '+Math.abs(b)} ${chosenOp} ${c}`, solX: solX, solOp: chosenOp, op: chosenOp };
+        } else if (mode === 'adv') {
+            let a, c_c, b, d, k, solX;
+            do { k = -Math.abs(getNonZero(4, 1)); c_c = getNonZero(4, 1); a = c_c + k; solX = getNonZero(6, -3); b = getNonZero(9, -9); d = k * solX + b;
+            } while (a === 0 || k === 0 || d === 0 || Math.abs(d) > 9);
+            let startOp = ops[Math.floor(Math.random() * 4)];
+            prob = { eq: `${formatTerm(a, true)}x ${b > 0 ? '+ '+b : '- '+Math.abs(b)} ${startOp} ${formatTerm(c_c, true)}x ${d > 0 ? '+ '+d : '- '+Math.abs(d)}`, solX, op: flip[startOp], solOp: flip[startOp] };
+        } else {
+            prob = buildChallengeProb(ops, flip);
+        }
+        pState[mode].prob = prob;
+        document.getElementById('practice-eq').innerHTML = prob.eq;
+        document.getElementById('practice-val').value = "";
+    }
+
+    function buildChallengeProb(ops, flip) {
+        let d1, d2; do { d1 = Math.floor(Math.random() * 4) + 2; d2 = Math.floor(Math.random() * 4) + 2; } while (d1 === d2);
+        let lcm = getLCM(d1, d2), m1 = lcm / d1, m2 = lcm / d2;
+        let a, b, c_c, d_c, fX, fC, g, solX, startOp, valid = false;
+        let b_list = [-9,-8,-7,-6,-5,-4,-3,-2,-1, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+        while (!valid) {
+            a = getNonZero(4, 1); c_c = getNonZero(4, 1); fX = (m1 * a) - (m2 * c_c);
+            if (fX === 0) continue; solX = getNonZero(5, -2); g = getNonZero(3, 2) * (Math.random() < 0.5 ? 1 : -1);
+            let targetFC = g * lcm - fX * solX;
+            b_list.sort(() => Math.random() - 0.5);
+            for (let b_test of b_list) {
+                if ((m1 * b_test - targetFC) % m2 === 0) {
+                    let dc_test = (m1 * b_test - targetFC) / m2;
+                    if (dc_test !== 0 && Math.abs(dc_test) <= 9) { b = b_test; d_c = dc_test; valid = true; break; }
+                }
+            }
+            if (valid) { startOp = ops[Math.floor(Math.random() * 4)]; fC = targetFC; }
+        }
+        return { eq: `<div class="fraction"><span>${formatTerm(a, true)}x ${b>0?'+ '+b:'- '+Math.abs(b)}</span><span class="fdn">${d1}</span></div> - <div class="fraction"><span>${formatTerm(c_c, true)}x ${d_c>0?'+ '+d_c:'- '+Math.abs(d_c)}</span><span class="fdn">${d2}</span></div> ${startOp} ${g}`, solX, op: fX < 0 ? flip[startOp] : startOp, solOp: fX < 0 ? flip[startOp] : startOp };
+    }
+
+    function submitPractice() {
+        const mode = pState.currentMode;
+        const btn = document.getElementById('practice-btn');
+        const msg = document.getElementById('practice-msg');
+
+        if (pState[mode].isWaitingNext) {
+            pState[mode].isWaitingNext = false;
+            msg.classList.add('hidden');
+            toggleInputs('practice', false);
+            toggleButtonToNext(btn, false);
+            generateProb(mode);
+            return;
+        }
+
+        const uOp = document.getElementById('practice-op').value;
+        const uVal = parseInt(document.getElementById('practice-val').value);
+        if (isNaN(uVal)) return;
+
+        const isOk = (uOp === pState[mode].prob.solOp && uVal === pState[mode].prob.solX);
+        
+        pState[mode].window.push(isOk);
+        if (pState[mode].window.length > 4) pState[mode].window.shift();
+        
+        const okCount = pState[mode].window.filter(x => x).length;
+        const errCount = pState[mode].window.filter(x => !x).length;
+
+        msg.innerText = isOk ? "✅ 太棒了！答對了！" : `❌ 答錯了！正確答案：x ${pState[mode].prob.solOp} ${pState[mode].prob.solX}`;
+        msg.className = `msg-box ${isOk ? 'correct-bg' : 'wrong-bg'}`;
+        msg.classList.remove('hidden');
+
+        pState[mode].isWaitingNext = true;
+        toggleInputs('practice', true);
+        toggleButtonToNext(btn, true);
+
+        if (isOk && okCount >= 3) {
+            setTimeout(() => showTransitionPopup(mode, 'upgrade'), 800);
+            pState[mode].window = []; 
+        } 
+        else if (!isOk && errCount >= 3) {
+            setTimeout(() => showTransitionPopup(mode, 'downgrade'), 800);
+            pState[mode].window = []; 
+        }
+    }
+
+    function showTransitionPopup(mode, type) {
+        const modal = document.getElementById('transition-modal');
+        const actionBtn = document.getElementById('transition-action-btn');
+        const title = document.getElementById('transition-title');
+        const text = document.getElementById('transition-text');
+        const icon = document.getElementById('transition-icon');
+        const mapInfo = levelMap[mode];
+
+        if (type === 'upgrade') {
+            icon.innerText = "🌟";
+            if (mapInfo.next === 'lobby') {
+                title.innerText = "勇者！挑戰巔峰成功";
+                text.innerText = "你已精通最難的不等式挑戰，是否要回到大廳休息？";
+                actionBtn.innerText = "回到大廳";
+            } else {
+                title.innerText = "太厲害了！";
+                text.innerText = `看來這關對你來說太簡單了，要晉級到「${mapInfo.nextName}」嗎？`;
+                actionBtn.innerText = `晉級${mapInfo.nextName}`;
+            }
+            actionBtn.style.background = "var(--primary)";
+            actionBtn.onclick = () => { modal.classList.add('hidden'); if(mapInfo.next==='lobby') goHome(); else openGame(mapInfo.next); };
+        } else {
+            icon.innerText = "📉";
+            title.innerText = "遇到瓶頸了嗎？";
+            if (mapInfo.prev === 'lobby') {
+                text.innerText = "看來這關目前有點挑戰，要不要先回到遊戲中遊玩放鬆暖身一下？";
+                actionBtn.innerText = "回到遊戲遊玩";
+            } else {
+                text.innerText = `看來這關目前有點挑戰，要不要先退回「${mapInfo.prevName}」暖身一下？`;
+                actionBtn.innerText = `退回${mapInfo.prevName}`;
+            }
+            actionBtn.style.background = "var(--warning)";
+            actionBtn.onclick = () => { modal.classList.add('hidden'); if(mapInfo.prev==='lobby') goHome(); else openGame(mapInfo.prev); };
+        }
+        modal.classList.remove('hidden');
+    }
+
+    function closeTransition() {
+        document.getElementById('transition-modal').classList.add('hidden');
+    }
+
+    function toggleInputs(prefix, disabled) {
+        document.getElementById(`${prefix}-op`).disabled = disabled;
+        document.getElementById(`${prefix}-val`).disabled = disabled;
+    }
+    function toggleButtonToNext(btn, isNext) {
+        btn.innerText = isNext ? "下一題" : "回答";
+        if(isNext) btn.classList.add('next-mode'); else btn.classList.remove('next-mode');
+    }
+
+    // --- 適性診斷邏輯 ---
+    function resetDiag() {
+        diagState.window = []; diagState.history = []; diagState.passed.clear(); diagState.failed.clear();
+        diagState.isWaitingNext = false;
+        document.getElementById('diag-setup').classList.remove('hidden');
+        document.getElementById('diag-quiz').classList.add('hidden');
+        document.getElementById('diag-report').classList.add('hidden');
+    }
+    
+    function startDiag(lvl) {
+        diagState.lvl = lvl; diagState.isWaitingNext = false;
+        document.getElementById('diag-setup').classList.add('hidden');
+        document.getElementById('diag-quiz').classList.remove('hidden');
+        toggleInputs('diag', false);
+        toggleButtonToNext(document.getElementById('diag-btn'), false);
+        nextDiagProb();
+    }
+    
+    function nextDiagProb() {
+        const lvl = diagState.lvl; const ops = ['>', '<', '≥', '≤']; const flip = {'>':'<', '<':'>', '≥':'≤', '≤':'≥'};
+        let prob = {};
+        if (lvl === 1) {
+            let a = Math.floor(Math.random()*4)+2; 
+            let solX = getNonZero(9,-4); 
+            let b = getNonZero(9,-9);
+            let c = a*solX+b; 
+            if(c===0) { b = (b === -1) ? 1 : b + 1; c = a * solX + b; }
+            let chosenOp = ops[Math.floor(Math.random()*4)];
+            prob = { eq: `${a}x ${b>0?'+ '+b:'- '+Math.abs(b)} ${chosenOp} ${c}`, solX, solOp: chosenOp };
+        } else if (lvl === 2) {
+            let a, c_c, b, d, k, solX; do { k = -Math.abs(getNonZero(4,1)); c_c = getNonZero(4,1); a = c_c+k; solX = getNonZero(6,-3); b = getNonZero(9,-9); d = k*solX+b; } while (a===0||k===0||d===0||Math.abs(d)>9);
+            let sOp = ops[Math.floor(Math.random()*4)];
+            prob = { eq: `${formatTerm(a,true)}x ${b>0?'+ '+b:'- '+Math.abs(b)} ${sOp} ${formatTerm(c_c,true)}x ${d>0?'+ '+d:'- '+Math.abs(d)}`, solX, solOp: flip[sOp] };
+        } else { prob = buildChallengeProb(ops, flip); }
+        diagState.prob = prob;
+        document.getElementById('diag-eq').innerHTML = prob.eq;
+        document.getElementById('diag-lvl-label').innerText = lvl;
+        document.getElementById('diag-val').value = '';
+        renderDiagDots();
+    }
+    
+    function submitDiag() {
+        const btn = document.getElementById('diag-btn'); 
+        const msg = document.getElementById('diag-trans-msg');
+        
+        if (diagState.isWaitingNext) {
+            diagState.isWaitingNext = false; 
+            msg.classList.add('hidden'); 
+            toggleInputs('diag', false); 
+            toggleButtonToNext(btn, false);
+            
+            const okC = diagState.window.filter(x=>x).length;
+            const errC = diagState.window.filter(x=>!x).length; 
+            
+            if (okC >= 3) {
+                diagState.passed.add(diagState.lvl);
+                if (diagState.lvl === 3) {
+                    finishDiag(); 
+                } else { 
+                    if (diagState.failed.has(diagState.lvl + 1)) {
+                        finishDiag(); 
+                    } else {
+                        diagState.lvl++; 
+                        diagState.window = []; 
+                        alert(`🌟 表現優異！系統將為您提升至第 ${diagState.lvl} 層次繼續挑戰！`);
+                        nextDiagProb(); 
+                    }
+                }
+            } 
+            else if (errC >= 3) { 
+                diagState.failed.add(diagState.lvl);
+                if (diagState.lvl === 1) {
+                    finishDiag(); 
+                } else {
+                    if (diagState.passed.has(diagState.lvl - 1)) {
+                        finishDiag(); 
+                    } else {
+                        diagState.lvl--; 
+                        diagState.window = []; 
+                        alert(`📉 遇到一點小挑戰！系統為您動態調整至第 ${diagState.lvl} 層次。`);
+                        nextDiagProb(); 
+                    }
+                }
+            } 
+            else { 
+                nextDiagProb(); 
+            }
+            return;
+        }
+        
+        const uOp = document.getElementById('diag-op').value; const uVal = parseInt(document.getElementById('diag-val').value);
+        if (isNaN(uVal)) return;
+        const isOk = (uOp === diagState.prob.solOp && uVal === diagState.prob.solX);
+        
+        diagState.history.push({ 
+            lvl: diagState.lvl, 
+            q: diagState.prob.eq, 
+            ua: `x ${uOp} ${uVal}`, 
+            ca: `x ${diagState.prob.solOp} ${diagState.prob.solX}`, 
+            correct: isOk 
+        });
+        
+        diagState.window.push(isOk); if (diagState.window.length > 4) diagState.window.shift();
+        renderDiagDots();
+        
+        msg.innerText = isOk ? "✅ 答對了！" : `❌ 正確答案：x ${diagState.prob.solOp} ${diagState.prob.solX}`;
+        msg.className = `msg-box ${isOk ? 'correct-bg' : 'wrong-bg'}`; 
+        msg.classList.remove('hidden');
+        
+        diagState.isWaitingNext = true; 
+        toggleInputs('diag', true); 
+        toggleButtonToNext(btn, true);
+    }
+    
+    function renderDiagDots() {
+        const c = document.getElementById('diag-dots'); c.innerHTML = '';
+        for (let i = 0; i < 4; i++) {
+            const d = document.createElement('div'); d.className = 'dot' + (diagState.window[i] === true ? ' correct' : (diagState.window[i] === false ? ' wrong' : ''));
+            c.appendChild(d);
+        }
+    }
+    
+    function finishDiag() {
+        document.getElementById('diag-quiz').classList.add('hidden');
+        const r = document.getElementById('diag-report'); 
+        r.classList.remove('hidden');
+        
+        let badge = "初探新手";
+        let advice = "建議先回遊戲/基礎關/先備知識關練習";
+        let isErr = true;
+
+        if (diagState.passed.has(3)) { 
+            badge = "挑戰大師"; 
+            advice = "建議前往下一單元<br><small>(例如：下一單元基礎概念)</small>"; 
+            isErr = false; 
+        } else if (diagState.passed.has(2)) { 
+            badge = "推理高手"; 
+            advice = "建議前往習作/挑戰關卡<br><small>(例如：綜合應用題)</small>"; 
+            isErr = false; 
+        } else if (diagState.passed.has(1)) { 
+            badge = "新星學徒"; 
+            advice = "建議前往課本/進階關卡<br><small>(例如：課本指定例題)</small>"; 
+            isErr = false; 
+        }
+
+        r.innerHTML = `
+            <div style="background:#f4f7f9; padding:20px; border-radius:12px; margin-bottom:20px;">
+                <strong>1. 評定等級：</strong><br>
+                <span style="font-size:1.6rem; color:var(--primary); font-weight:bold;">${badge}</span>
+            </div>
+            <div style="margin-bottom:20px;">
+                <strong>2. 作答紀錄：</strong>
+                <table>
+                    <tr><th>題目</th><th>你的答案</th><th>正確答案</th></tr>
+                    ${diagState.history.map(h => `<tr><td><div style="font-size:0.8rem">${h.q}</div></td><td style="color:${h.correct?'#2e7d32':'#c62828'}; font-weight:bold;">${h.ua}</td><td>${h.ca}</td></tr>`).join('')}
+                </table>
+            </div>
+            <div class="${isErr ? 'failure-box' : 'advice-box'}">
+                <strong>3. 學習建議：</strong><br><br>${advice}
+            </div>
+            <button onclick="goHome()" class="lvl-btn" style="background:var(--primary)">回到大廳</button>
+        `;
+    }
+</script>
+</body>
+</html>
